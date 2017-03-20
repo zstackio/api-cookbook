@@ -15,30 +15,34 @@ import static java.util.Arrays.asList;
  * Created by ZStack on 17-3-3.
  */
 public class flatNetworkCephStorageScene {
-    public static String SHA(final String strText, final String strType) {
+    public static String SHA(final String strText, final String strType){
         String strResult = null;
         if (strText != null && strText.length() > 0) {
             try {
                 // SHA 加密开始
-                // 创建加密对象 并傳入加密類型
+                // 创建加密对象 并传入加密类型
                 MessageDigest messageDigest = MessageDigest.getInstance(strType);
                 // 传入要加密的字符串
                 messageDigest.update(strText.getBytes());
-                // 得到 byte 類型结果
+                // 得到 byte 类型结果
                 byte byteBuffer[] = messageDigest.digest();
-                // 將 byte 轉換爲 string
+                // 将 byte 转换为 string
                 StringBuffer strHexString = new StringBuffer();
-                // 遍歷 byte buffer
-                for (int i = 0; i < byteBuffer.length; i++) {
+                // 遍历 byte buffer
+                for (int i = 0; i < byteBuffer.length; i++)
+                {
                     String hex = Integer.toHexString(0xff & byteBuffer[i]);
-                    if (hex.length() == 1) {
+                    if (hex.length() == 1)
+                    {
                         strHexString.append('0');
                     }
                     strHexString.append(hex);
                 }
-                // 得到返回結果
+                // 得到返回结果
                 strResult = strHexString.toString();
-            } catch (NoSuchAlgorithmException e) {
+            }
+            catch (NoSuchAlgorithmException e)
+            {
                 e.printStackTrace();
             }
         }
@@ -51,9 +55,9 @@ public class flatNetworkCephStorageScene {
         //声明sessionId；每个action均需要sessionId
         String sessionId = null;
 
-        //设置登录zstack的地址；通过172.20.12.4连接到部署zstack管理节点环境的主机
+        //设置登录zstack的地址；通过172.20.11.115连接到部署zstack管理节点环境的主机
         ZSConfig.Builder zBuilder = new ZSConfig.Builder();
-        zBuilder.setHostname("172.20.12.4");
+        zBuilder.setHostname("172.20.11.115");
         ZSClient.configure(zBuilder.build());
 
         //登录zstack；获取session
@@ -65,8 +69,7 @@ public class flatNetworkCephStorageScene {
         if (logInByAccountActionRes.error == null) {
             System.out.println("logInByAccount successfully");
             sessionId = logInByAccountActionRes.value.getInventory().getUuid();
-        } else logInByAccountActionRes.throwExceptionIfError();
-
+        }else logInByAccountActionRes.throwExceptionIfError();
         //创建区域
         CreateZoneAction createZoneAction = new CreateZoneAction();
         createZoneAction.name = "zone1";
@@ -121,7 +124,7 @@ public class flatNetworkCephStorageScene {
         BackupStorageInventory cephBackupStoage = addCephBackupStorageAction.call().value.inventory;
         System.out.println(String.format("addCephImageStoreBackupStorage:%s successfully", cephBackupStoage.name));
 
-        //将Ceph镜像存储挂载到集群，与本地镜像存储操作一致
+        //将Ceph镜像存储挂载到区域，与本地镜像存储操作一致
         AttachBackupStorageToZoneAction attachBackupStorageToZoneAction = new AttachBackupStorageToZoneAction();
         attachBackupStorageToZoneAction.zoneUuid = zone.uuid;
         attachBackupStorageToZoneAction.backupStorageUuid = cephBackupStoage.uuid;
@@ -144,7 +147,7 @@ public class flatNetworkCephStorageScene {
         createL2NoVlanNetworkAction.name = "public-l2";
         createL2NoVlanNetworkAction.description = "this is a no-serivce network";
         createL2NoVlanNetworkAction.zoneUuid = zone.uuid;
-        createL2NoVlanNetworkAction.physicalInterface = "eth1";
+        createL2NoVlanNetworkAction.physicalInterface = "eth0";
         createL2NoVlanNetworkAction.sessionId = sessionId;
         L2NetworkInventory l2NoVlanNetwork = createL2NoVlanNetworkAction.call().value.inventory;
         System.out.println(String.format("createL2NoVlanNetwork:%s successfully", l2NoVlanNetwork.name));
@@ -155,24 +158,6 @@ public class flatNetworkCephStorageScene {
         attachL2NoVlanNetworkToClusterAction.clusterUuid = cluster.uuid;
         attachL2NoVlanNetworkToClusterAction.sessionId = sessionId;
         attachL2NoVlanNetworkToClusterAction.call();
-
-        //创建无服务L2Vlan私有网络
-        CreateL2VlanNetworkAction createL2VlanNetworkAction = new CreateL2VlanNetworkAction();
-        createL2VlanNetworkAction.vlan = 3000;
-        createL2VlanNetworkAction.name = "private-l2";
-        createL2VlanNetworkAction.description = "this is a l2-vlan network";
-        createL2VlanNetworkAction.zoneUuid = zone.uuid;
-        createL2VlanNetworkAction.physicalInterface = "eth1";
-        createL2VlanNetworkAction.sessionId = sessionId;
-        L2NetworkInventory l2VlanNetwork = createL2VlanNetworkAction.call().value.inventory;
-        System.out.println(String.format("createL2VlanNetwork:%s successfully", l2VlanNetwork.name));
-
-        //挂载无服务L2Vlan私有网络到集群
-        AttachL2NetworkToClusterAction attachL2VlanNetworkToClusterAction = new AttachL2NetworkToClusterAction();
-        attachL2VlanNetworkToClusterAction.l2NetworkUuid = l2VlanNetwork.uuid;
-        attachL2VlanNetworkToClusterAction.clusterUuid = cluster.uuid;
-        attachL2VlanNetworkToClusterAction.sessionId = sessionId;
-        attachL2VlanNetworkToClusterAction.call();
 
         //基于L2NoVlan公有网络创建L3公有网络
         CreateL3NetworkAction createL3PublicNetworkAction = new CreateL3NetworkAction();
@@ -222,7 +207,7 @@ public class flatNetworkCephStorageScene {
         //创建计算规格
         CreateInstanceOfferingAction createInstanceOfferingAction = new CreateInstanceOfferingAction();
         createInstanceOfferingAction.name = "instanceoffering1";
-        createInstanceOfferingAction.cpuNum = 1;
+        createInstanceOfferingAction.cpuNum = 2;
         createInstanceOfferingAction.memorySize = 2148000000l;
         createInstanceOfferingAction.sessionId = sessionId;
         InstanceOfferingInventory instanceOffering = createInstanceOfferingAction.call().value.inventory;

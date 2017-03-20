@@ -21,15 +21,15 @@ public class flatNetworkLocalStorageEipScene {
         if (strText != null && strText.length() > 0) {
             try {
                 // SHA 加密开始
-                // 创建加密对象 并傳入加密類型
+                // 创建加密对象 并传入加密类型
                 MessageDigest messageDigest = MessageDigest.getInstance(strType);
                 // 传入要加密的字符串
                 messageDigest.update(strText.getBytes());
-                // 得到 byte 類型结果
+                // 得到 byte 类型结果
                 byte byteBuffer[] = messageDigest.digest();
-                // 將 byte 轉換爲 string
+                // 将 byte 转换为 string
                 StringBuffer strHexString = new StringBuffer();
-                // 遍歷 byte buffer
+                // 遍历 byte buffer
                 for (int i = 0; i < byteBuffer.length; i++)
                 {
                     String hex = Integer.toHexString(0xff & byteBuffer[i]);
@@ -39,7 +39,7 @@ public class flatNetworkLocalStorageEipScene {
                     }
                     strHexString.append(hex);
                 }
-                // 得到返回結果
+                // 得到返回结果
                 strResult = strHexString.toString();
             }
             catch (NoSuchAlgorithmException e)
@@ -129,7 +129,7 @@ public class flatNetworkLocalStorageEipScene {
         ImageStoreBackupStorageInventory imageStoreBackupStoage = addImageStoreBackupStorageAction.call().value.inventory;
         System.out.println(String.format("addImageStoreBackupStorage:%s successfully",imageStoreBackupStoage.name));
 
-        //将镜像存储挂载到集群
+        //将镜像存储挂载到区域；注意与主存储不同，这是由zstack的设计架构决定的
         AttachBackupStorageToZoneAction attachBackupStorageToZoneAction = new AttachBackupStorageToZoneAction();
         attachBackupStorageToZoneAction.zoneUuid = zone.uuid;
         attachBackupStorageToZoneAction.backupStorageUuid = imageStoreBackupStoage.uuid;
@@ -156,7 +156,7 @@ public class flatNetworkLocalStorageEipScene {
         createL2NoVlanNetworkAction.sessionId = sessionId;
         L2NetworkInventory l2NoVlanNetwork = createL2NoVlanNetworkAction.call().value.inventory;
         System.out.println(String.format("createL2NoVlanNetwork:%s successfully",l2NoVlanNetwork.name));
-        
+
         //挂载无服务L2NoVlan公有网络到集群
         AttachL2NetworkToClusterAction attachL2NoVlanNetworkToClusterAction = new AttachL2NetworkToClusterAction();
         attachL2NoVlanNetworkToClusterAction.l2NetworkUuid = l2NoVlanNetwork.uuid;
@@ -217,7 +217,7 @@ public class flatNetworkLocalStorageEipScene {
         AddIpRangeByNetworkCidrAction addIpRangeByNetworkCidrAction = new AddIpRangeByNetworkCidrAction();
         addIpRangeByNetworkCidrAction.name = "iprange2";
         addIpRangeByNetworkCidrAction.l3NetworkUuid = l3PrivateNetwork.uuid;
-        addIpRangeByNetworkCidrAction.networkCidr = "192.168.200.0/24";
+        addIpRangeByNetworkCidrAction.networkCidr = "192.168.100.0/24";
         addIpRangeByNetworkCidrAction.sessionId = sessionId;
         addIpRangeByNetworkCidrAction.call();
 

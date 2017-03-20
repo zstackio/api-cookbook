@@ -20,15 +20,15 @@ public class virtualRouterLocalStorageEipScene {
         if (strText != null && strText.length() > 0) {
             try {
                 // SHA 加密开始
-                // 创建加密对象 并傳入加密類型
+                // 创建加密对象 并传入加密类型
                 MessageDigest messageDigest = MessageDigest.getInstance(strType);
                 // 传入要加密的字符串
                 messageDigest.update(strText.getBytes());
-                // 得到 byte 類型结果
+                // 得到 byte 类型结果
                 byte byteBuffer[] = messageDigest.digest();
-                // 將 byte 轉換爲 string
+                // 将 byte 转换为 string
                 StringBuffer strHexString = new StringBuffer();
-                // 遍歷 byte buffer
+                // 遍历 byte buffer
                 for (int i = 0; i < byteBuffer.length; i++)
                 {
                     String hex = Integer.toHexString(0xff & byteBuffer[i]);
@@ -38,7 +38,7 @@ public class virtualRouterLocalStorageEipScene {
                     }
                     strHexString.append(hex);
                 }
-                // 得到返回結果
+                // 得到返回结果
                 strResult = strHexString.toString();
             }
             catch (NoSuchAlgorithmException e)
@@ -127,7 +127,7 @@ public class virtualRouterLocalStorageEipScene {
         ImageStoreBackupStorageInventory imageStoreBackupStoage = addImageStoreBackupStorageAction.call().value.inventory;
         System.out.println(String.format("addImageStoreBackupStorage:%s successfully",imageStoreBackupStoage.name));
 
-        //将镜像存储挂载到集群
+        //将镜像存储挂载到区域；注意与主存储不同，这是由zstack的设计架构决定的
         AttachBackupStorageToZoneAction attachBackupStorageToZoneAction = new AttachBackupStorageToZoneAction();
         attachBackupStorageToZoneAction.zoneUuid = zone.uuid;
         attachBackupStorageToZoneAction.backupStorageUuid = imageStoreBackupStoage.uuid;
@@ -139,7 +139,6 @@ public class virtualRouterLocalStorageEipScene {
         AddImageAction addImageAction = new AddImageAction();
         addImageAction.name = "image1";
         addImageAction.url = "http://cdn.zstack.io/product_downloads/iso/ZStack-Enterprise-x86_64-DVD-1.9.0.iso";
-//        http://192.168.200.100/mirror/diskimages/centos7.2-mini-qemu-qa.qcow2
         addImageAction.format = "qcow2";
         addImageAction.backupStorageUuids = Collections.singletonList(imageStoreBackupStoage.uuid);
         addImageAction.sessionId = sessionId;
@@ -150,7 +149,6 @@ public class virtualRouterLocalStorageEipScene {
         AddImageAction addVRImageAction = new AddImageAction();
         addVRImageAction.name = "vrimage";
         addVRImageAction.url = "http://cdn.zstack.io/product_downloads/vrouter/vCenter-Vrouter-template-20170208.vmdk";
-//        http://192.168.200.100/mirror/diskimages/zstack-vrouter-20161130.qcow2
         addVRImageAction.format = "qcow2";
         addVRImageAction.system = true;
         addVRImageAction.backupStorageUuids = Collections.singletonList(imageStoreBackupStoage.uuid);
@@ -170,52 +168,52 @@ public class virtualRouterLocalStorageEipScene {
         System.out.println(String.format("createL2NoVlanPublicNetwork:%s successfully", l2NoVlanPublicNetwork.name));
 
         //挂载无服务L2NoVlan公有网络到集群
-        AttachL2NetworkToClusterAction attachL2NoVlanNetworkToClusterAction = new AttachL2NetworkToClusterAction();
-        attachL2NoVlanNetworkToClusterAction.l2NetworkUuid = l2NoVlanPublicNetwork.uuid;
-        attachL2NoVlanNetworkToClusterAction.clusterUuid = cluster.uuid;
-        attachL2NoVlanNetworkToClusterAction.sessionId = sessionId;
-        attachL2NoVlanNetworkToClusterAction.call();
-
-        //创建无服务L2NoVlan管理网络;云路由环境中用户需要手动创建管理网络，与扁平网络环境不同
-        CreateL2NoVlanNetworkAction createL2NoVlanManagementNetworkAction = new CreateL2NoVlanNetworkAction();
-        createL2NoVlanManagementNetworkAction.name = "management-l2";
-        createL2NoVlanManagementNetworkAction.description = "this is a no-serivce network";
-        createL2NoVlanManagementNetworkAction.zoneUuid = zone.uuid;
-        createL2NoVlanManagementNetworkAction.physicalInterface = "eth1";
-        createL2NoVlanManagementNetworkAction.sessionId = sessionId;
-        L2NetworkInventory l2NoVlanNetwork = createL2NoVlanManagementNetworkAction.call().value.inventory;
-        System.out.println(String.format("createL2NoVlanManagementNetwork:%s successfully", l2NoVlanNetwork.name));
-
-        //挂载无服务L2NoVlan管理网络到集群
         AttachL2NetworkToClusterAction attachL2NoVlanPublicNetworkToClusterAction = new AttachL2NetworkToClusterAction();
-        attachL2NoVlanPublicNetworkToClusterAction.l2NetworkUuid = l2NoVlanNetwork.uuid;
+        attachL2NoVlanPublicNetworkToClusterAction.l2NetworkUuid = l2NoVlanPublicNetwork.uuid;
         attachL2NoVlanPublicNetworkToClusterAction.clusterUuid = cluster.uuid;
         attachL2NoVlanPublicNetworkToClusterAction.sessionId = sessionId;
         attachL2NoVlanPublicNetworkToClusterAction.call();
 
+        //创建无服务L2Vlan管理网络;云路由环境中用户需要手动创建管理网络，与扁平网络环境不同
+        CreateL2NoVlanNetworkAction createL2NoVlanManagementNetworkAction = new CreateL2NoVlanNetworkAction();
+        createL2NoVlanManagementNetworkAction.name = "management-l2";
+        createL2NoVlanManagementNetworkAction.description = "this is a no-serivce network";
+        createL2NoVlanManagementNetworkAction.zoneUuid = zone.uuid;
+        createL2NoVlanManagementNetworkAction.physicalInterface = "eth0";
+        createL2NoVlanManagementNetworkAction.sessionId = sessionId;
+        L2NetworkInventory l2NoVlanManagmentNetwork = createL2NoVlanManagementNetworkAction.call().value.inventory;
+        System.out.println(String.format("createL2NoVlanManagementNetwork:%s successfully", l2NoVlanManagmentNetwork.name));
+
+        //挂载无服务L2NoVlan管理网络到集群
+        AttachL2NetworkToClusterAction attachL2NoVlanManagementNetworkToClusterAction = new AttachL2NetworkToClusterAction();
+        attachL2NoVlanManagementNetworkToClusterAction.l2NetworkUuid = l2NoVlanManagmentNetwork.uuid;
+        attachL2NoVlanManagementNetworkToClusterAction.clusterUuid = cluster.uuid;
+        attachL2NoVlanManagementNetworkToClusterAction.sessionId = sessionId;
+        attachL2NoVlanManagementNetworkToClusterAction.call();
+
         //创建无服务L2Vlan私有网络
-        CreateL2VlanNetworkAction createL2VlanNetworkAction = new CreateL2VlanNetworkAction();
-        createL2VlanNetworkAction.vlan = 3000;
-        createL2VlanNetworkAction.name = "private-l2";
-        createL2VlanNetworkAction.description = "this is a l2-vlan network";
-        createL2VlanNetworkAction.zoneUuid = zone.uuid;
-        createL2VlanNetworkAction.physicalInterface = "eth1";
-        createL2VlanNetworkAction.sessionId = sessionId;
-        L2NetworkInventory l2VlanNetwork = createL2VlanNetworkAction.call().value.inventory;
-        System.out.println(String.format("createL2VlanPrivateNetwork:%s successfully", l2VlanNetwork.name));
+        CreateL2VlanNetworkAction createL2VlanPrivateNetworkAction = new CreateL2VlanNetworkAction();
+        createL2VlanPrivateNetworkAction.vlan = 3000;
+        createL2VlanPrivateNetworkAction.name = "private-l2";
+        createL2VlanPrivateNetworkAction.description = "this is a l2-vlan network";
+        createL2VlanPrivateNetworkAction.zoneUuid = zone.uuid;
+        createL2VlanPrivateNetworkAction.physicalInterface = "eth1";
+        createL2VlanPrivateNetworkAction.sessionId = sessionId;
+        L2NetworkInventory l2VlanPrivateNetwork = createL2VlanPrivateNetworkAction.call().value.inventory;
+        System.out.println(String.format("createL2VlanPrivateNetwork:%s successfully", l2VlanPrivateNetwork.name));
 
         //挂载无服务L2Vlan私有网络到集群
-        AttachL2NetworkToClusterAction attachL2VlanNetworkToClusterAction = new AttachL2NetworkToClusterAction();
-        attachL2VlanNetworkToClusterAction.l2NetworkUuid = l2VlanNetwork.uuid;
-        attachL2VlanNetworkToClusterAction.clusterUuid = cluster.uuid;
-        attachL2VlanNetworkToClusterAction.sessionId = sessionId;
-        attachL2VlanNetworkToClusterAction.call();
+        AttachL2NetworkToClusterAction attachL2VlanPirvateNetworkToClusterAction = new AttachL2NetworkToClusterAction();
+        attachL2VlanPirvateNetworkToClusterAction.l2NetworkUuid = l2VlanPrivateNetwork.uuid;
+        attachL2VlanPirvateNetworkToClusterAction.clusterUuid = cluster.uuid;
+        attachL2VlanPirvateNetworkToClusterAction.sessionId = sessionId;
+        attachL2VlanPirvateNetworkToClusterAction.call();
 
         //基于L2NoVlan公有网络创建L3公有网络
         CreateL3NetworkAction createL3PublicNetworkAction = new CreateL3NetworkAction();
         createL3PublicNetworkAction.name = "public-l3";
         createL3PublicNetworkAction.type = "L3BasicNetwork";
-        createL3PublicNetworkAction.l2NetworkUuid = l2NoVlanNetwork.uuid;
+        createL3PublicNetworkAction.l2NetworkUuid = l2NoVlanPublicNetwork.uuid;
         createL3PublicNetworkAction.system = false;
         createL3PublicNetworkAction.sessionId = sessionId;
         L3NetworkInventory l3PublicNetwork = createL3PublicNetworkAction.call().value.inventory;
@@ -236,25 +234,28 @@ public class virtualRouterLocalStorageEipScene {
         CreateL3NetworkAction createL3MangementNetworkAction = new CreateL3NetworkAction();
         createL3MangementNetworkAction.name = "management-l3";
         createL3MangementNetworkAction.type = "L3BasicNetwork";
-        createL3MangementNetworkAction.l2NetworkUuid = l2NoVlanNetwork.uuid;
+        createL3MangementNetworkAction.l2NetworkUuid = l2NoVlanManagmentNetwork.uuid;
         createL3MangementNetworkAction.system = false;
         createL3MangementNetworkAction.sessionId = sessionId;
         L3NetworkInventory l3MangementNetwork = createL3MangementNetworkAction.call().value.inventory;
         System.out.println(String.format("createL3ManagementNetwork:%s successfully", l3PublicNetwork.name));
 
         //挂载IP地址段到管理网络management-l3；注意此处挂载的网络段须与物理机实际配置的IP相匹配
-        AddIpRangeByNetworkCidrAction addManagementIpRangeByNetworkCidrAction = new AddIpRangeByNetworkCidrAction();
-        addManagementIpRangeByNetworkCidrAction.name = "iprange2";
-        addManagementIpRangeByNetworkCidrAction.l3NetworkUuid = l3MangementNetwork.uuid;
-        addManagementIpRangeByNetworkCidrAction.networkCidr = "192.168.0.0/16";
-        addManagementIpRangeByNetworkCidrAction.sessionId = sessionId;
-        addManagementIpRangeByNetworkCidrAction.call();
+        AddIpRangeAction addManagementIpRangeAction = new AddIpRangeAction();
+        addManagementIpRangeAction.l3NetworkUuid = l3MangementNetwork.uuid;
+        addManagementIpRangeAction.name = "iprange2";
+        addManagementIpRangeAction.startIp = "192.168.99.200";
+        addManagementIpRangeAction.endIp = "192.168.99.210";
+        addManagementIpRangeAction.netmask = "255.255.255.0";
+        addManagementIpRangeAction.gateway = "192.168.99.1";
+        addManagementIpRangeAction.sessionId = sessionId;
+        addManagementIpRangeAction.call();
 
         //基于L2Vlan网络 创建L3私有网络
         CreateL3NetworkAction createL3PrivateNetworkAction = new CreateL3NetworkAction();
         createL3PrivateNetworkAction.name = "private-l3";
         createL3PrivateNetworkAction.type = "L3BasicNetwork";
-        createL3PrivateNetworkAction.l2NetworkUuid = l2VlanNetwork.uuid;
+        createL3PrivateNetworkAction.l2NetworkUuid = l2VlanPrivateNetwork.uuid;
         createL3PrivateNetworkAction.system = false;
         createL3PrivateNetworkAction.sessionId = sessionId;
         L3NetworkInventory l3PrivateNetwork = createL3PrivateNetworkAction.call().value.inventory;
@@ -264,7 +265,7 @@ public class virtualRouterLocalStorageEipScene {
         AddIpRangeByNetworkCidrAction addPrivateIpRangeByNetworkCidrAction = new AddIpRangeByNetworkCidrAction();
         addPrivateIpRangeByNetworkCidrAction.name = "iprange3";
         addPrivateIpRangeByNetworkCidrAction.l3NetworkUuid = l3PrivateNetwork.uuid;
-        addPrivateIpRangeByNetworkCidrAction.networkCidr = "192.168.6.0/24";
+        addPrivateIpRangeByNetworkCidrAction.networkCidr = "192.168.100.0/24";
         addPrivateIpRangeByNetworkCidrAction.sessionId = sessionId;
         addPrivateIpRangeByNetworkCidrAction.call();
 
@@ -316,7 +317,7 @@ public class virtualRouterLocalStorageEipScene {
         createVirtualRouterOfferingAction.publicNetworkUuid = l3PublicNetwork.uuid;
         createVirtualRouterOfferingAction.imageUuid = VRImage.uuid;
         createVirtualRouterOfferingAction.name = "vr1";
-        createVirtualRouterOfferingAction.cpuNum = 2;
+        createVirtualRouterOfferingAction.cpuNum = 4;
         createVirtualRouterOfferingAction.memorySize = 2148000000l;
         createVirtualRouterOfferingAction.sessionId = sessionId;
         createVirtualRouterOfferingAction.call();

@@ -20,15 +20,15 @@ public class flatNetworkNfsStorageScene {
         if (strText != null && strText.length() > 0) {
             try {
                 // SHA 加密开始
-                // 创建加密对象 并傳入加密類型
+                // 创建加密对象 并传入加密类型
                 MessageDigest messageDigest = MessageDigest.getInstance(strType);
                 // 传入要加密的字符串
                 messageDigest.update(strText.getBytes());
-                // 得到 byte 類型结果
+                // 得到 byte 类型结果
                 byte byteBuffer[] = messageDigest.digest();
-                // 將 byte 轉換爲 string
+                // 将 byte 转换为 string
                 StringBuffer strHexString = new StringBuffer();
-                // 遍歷 byte buffer
+                // 遍历 byte buffer
                 for (int i = 0; i < byteBuffer.length; i++)
                 {
                     String hex = Integer.toHexString(0xff & byteBuffer[i]);
@@ -38,7 +38,7 @@ public class flatNetworkNfsStorageScene {
                     }
                     strHexString.append(hex);
                 }
-                // 得到返回結果
+                // 得到返回结果
                 strResult = strHexString.toString();
             }
             catch (NoSuchAlgorithmException e)
@@ -101,7 +101,7 @@ public class flatNetworkNfsStorageScene {
 
         //添加NFS主存储;此处添加的IP地址应属于NFS自有的万兆存储网络
         AddNfsPrimaryStorageAction addNfsPrimaryStorageAction = new AddNfsPrimaryStorageAction();
-        addNfsPrimaryStorageAction.url = "172.20.12.157:/nfs_root";
+        addNfsPrimaryStorageAction.url = "192.168.100.20:/nfs_root";
         addNfsPrimaryStorageAction.name = "ps1";
         addNfsPrimaryStorageAction.type = "NFS";
         addNfsPrimaryStorageAction.zoneUuid = zone.uuid;
@@ -128,7 +128,7 @@ public class flatNetworkNfsStorageScene {
         ImageStoreBackupStorageInventory imageStoreBackupStoage = addImageStoreBackupStorageAction.call().value.inventory;
         System.out.println(String.format("addImageStoreBackupStorage:%s successfully",imageStoreBackupStoage.name));
 
-        //将本地镜像存储挂载到集群
+        //将镜像存储挂载到区域；注意与主存储不同，这是由zstack的设计架构决定的
         AttachBackupStorageToZoneAction attachBackupStorageToZoneAction = new AttachBackupStorageToZoneAction();
         attachBackupStorageToZoneAction.zoneUuid = zone.uuid;
         attachBackupStorageToZoneAction.backupStorageUuid = imageStoreBackupStoage.uuid;
@@ -139,8 +139,7 @@ public class flatNetworkNfsStorageScene {
         //添加镜像到本地镜像仓库
         AddImageAction addImageAction = new AddImageAction();
         addImageAction.name = "image1";
-        addImageAction.url = "http://192.168.200.100/mirror/diskimages/centos7.2-mini-qemu-qa.qcow2";
-//        http://cdn.zstack.io/product_downloads/iso/ZStack-Enterprise-x86_64-DVD-1.9.0.iso
+        addImageAction.url = "http://cdn.zstack.io/product_downloads/iso/ZStack-Enterprise-x86_64-DVD-1.9.0.iso";
         addImageAction.format = "qcow2";
         addImageAction.backupStorageUuids = Collections.singletonList(imageStoreBackupStoage.uuid);
         addImageAction.sessionId = sessionId;
@@ -213,7 +212,7 @@ public class flatNetworkNfsStorageScene {
         CreateInstanceOfferingAction createInstanceOfferingAction = new CreateInstanceOfferingAction();
         createInstanceOfferingAction.name = "instanceoffering1";
         createInstanceOfferingAction.cpuNum = 2;
-        createInstanceOfferingAction.memorySize = 2148000000l;
+        createInstanceOfferingAction.memorySize = 21480000000l;
         createInstanceOfferingAction.sessionId = sessionId;
         InstanceOfferingInventory instanceOffering = createInstanceOfferingAction.call().value.inventory;
         System.out.println(String.format("createInstanceOffering:%s successfully", instanceOffering.name));
@@ -238,6 +237,6 @@ public class flatNetworkNfsStorageScene {
         createVmInstanceAction.sessionId = sessionId;
         VmInstanceInventory vm = createVmInstanceAction.call().value.inventory;
         System.out.println(String.format("createVm:%s successfully", vm.name));
-        
+
     }
 }
