@@ -6,7 +6,6 @@ const cors = require('koa-cors');
 
 const app = new Koa();
 const ipAddress = 'http://172.20.12.213:8080/zstack';
-const ipAddressT = "172.20.12.213";
 const password = "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86";
 const accountName = "admin";
 var allInventory = {
@@ -26,11 +25,7 @@ var allInventory = {
   vMInstance: "",
   instanceOffering: "",
   attachNetworkServiceToL3Network: "",
-  l3PrivateNetworkDns: "",
-  l3PrivateNetworkIpRange: "",
-  l3PrivateNetwork: "",
   attachL2NetworkToCluster: "",
-  l2VlanNetwork: "",
   publicL3NetworkDns: "",
   attachL2NoVlanNetworkToCluster: "",
   networkServiceProvider: ""
@@ -59,7 +54,7 @@ request({
     url: ipAddress + '/v1/zones',
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/create-zone',
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-zone',
     },
     json: {
       "params": {
@@ -94,7 +89,7 @@ router.post('/create-zone', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/create-cluster'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-cluster'
     }
   });
 })
@@ -112,7 +107,7 @@ router.post('/create-cluster', async(ctx, nest) => {
       "params": {
         "name": "HostTest",
         "clusterUuid": allInventory.cluster.uuid,
-        "managementIp": ipAddressT,
+        "managementIp": "10.0.58.28",
         "username": "root",
         "password": "password",
         "sshPort": 22.0
@@ -122,7 +117,7 @@ router.post('/create-cluster', async(ctx, nest) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/add-kvm-host'
+      'X-Web-Hook': 'http://172.31.253.203:8000/add-kvm-host'
     }
   }, (err, response, body) => {
     if (err) {
@@ -143,7 +138,7 @@ router.post('/add-kvm-host', async(ctx, next) => {
     json: {
       "params": {
         "monUrls": [
-          "root:password@172.20.11.233"
+          "root:password@10.0.194.117"
         ],
         "zoneUuid": allInventory.zone.uuid,
         "name": "My Ceph Primary Storage"
@@ -153,7 +148,7 @@ router.post('/add-kvm-host', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addCephPrimaryStorage'
+      'X-Web-Hook': 'http://172.31.253.203:8000/add-ceph-primary-storage'
     }
   }, (err, response, body) => {
     if (err) {
@@ -162,7 +157,7 @@ router.post('/add-kvm-host', async(ctx, next) => {
   })
 })
 
-router.post('/addCephPrimaryStorage', async(ctx, next) => {
+router.post('/add-ceph-primary-storage', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.cephPrimaryStorage = ctx.request.body.inventory;
@@ -173,12 +168,12 @@ router.post('/addCephPrimaryStorage', async(ctx, next) => {
     url: ipAddress + '/v1/clusters/' + allInventory.cluster.uuid + '/primary-storage/' + allInventory.cephPrimaryStorage.uuid,
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/attachCephPrimaryStorage'
+      'X-Web-Hook': 'http://172.31.253.203:8000/attach-ceph-primary-storage'
     }
   })
 })
 
-router.post('/attachCephPrimaryStorage', async(ctx, next) => {
+router.post('/attach-ceph-primary-storage', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.attachPrimaryStorageToCluster = ctx.request.body.inventory;
@@ -190,7 +185,7 @@ router.post('/attachCephPrimaryStorage', async(ctx, next) => {
     json: {
       "params": {
         "monUrls": [
-          "root:password@172.20.11.233"
+          "root:password@10.0.194.117"
         ],
         "name": "My Ceph Backup Storage",
         "importImages": false
@@ -200,28 +195,28 @@ router.post('/attachCephPrimaryStorage', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addCephBackStorage'
+      'X-Web-Hook': 'http://172.31.253.203:8000/add-ceph-back-storage'
     }
   })
 })
 
-router.post('/addCephBackStorage', async(ctx, next) => {
+router.post('/add-ceph-back-storage', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.cephBackupStorage = ctx.request.body.inventory;
   ctx.response.status = 200;
-  console.log('addSftpBackStorage');
+  console.log('addCephBackStorage');
   request({
     method: 'POST',
     url: ipAddress + '/v1/zones/' + allInventory.zone.uuid + '/backup-storage/' + allInventory.cephBackupStorage.uuid,
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/attachBackupStorageToZone'
+      'X-Web-Hook': 'http://172.31.253.203:8000/attach-backup-storage-to-zone'
     }
   })
 })
 
-router.post('/attachBackupStorageToZone', async(ctx, next) => {
+router.post('/attach-backup-storage-to-zone', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.attachBackupStorageToZone = ctx.request.body.inventory;
@@ -245,12 +240,12 @@ router.post('/attachBackupStorageToZone', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addImage'
+      'X-Web-Hook': 'http://172.31.253.203:8000/add-image'
     }
   })
 })
 
-router.post('/addImage', async(ctx, next) => {
+router.post('/add-image', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.image = ctx.request.body.inventory;
@@ -271,12 +266,12 @@ router.post('/addImage', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createL2NoVlanNetwork'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-l2-no-vlan-network'
     }
   })
 })
 
-router.post('/createL2NoVlanNetwork', async(ctx, next) => {
+router.post('/create-l2-no-vlan-network', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.l2NoVlanNetwork = ctx.request.body.inventory;
@@ -287,12 +282,12 @@ router.post('/createL2NoVlanNetwork', async(ctx, next) => {
     url: ipAddress + "/v1/l2-networks/" + allInventory.l2NoVlanNetwork.uuid + "/clusters/" + allInventory.cluster.uuid,
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/attachL2NoVlanNetworkToCluster'
+      'X-Web-Hook': 'http://172.31.253.203:8000/attach-l2-no-vlan-network-to-cluster'
     }
   })
 })
 
-router.post('/attachL2NoVlanNetworkToCluster', async(ctx, next) => {
+router.post('/attach-l2-no-vlan-network-to-cluster', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.attachL2NoVlanNetworkToCluster = ctx.request.body.inventory;
@@ -313,12 +308,12 @@ router.post('/attachL2NoVlanNetworkToCluster', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createL3PublicNetwork'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-l3-public-network'
     }
   })
 })
 
-router.post('/createL3PublicNetwork', async(ctx, next) => {
+router.post('/create-l3-public-network', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.l3PublicNetwork = ctx.request.body.inventory;
@@ -340,12 +335,12 @@ router.post('/createL3PublicNetwork', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addPublicIpRange'
+      'X-Web-Hook': 'http://172.31.253.203:8000/add-public-ip-range'
     }
   })
 })
 
-router.post('/addPublicIpRange', async(ctx, next) => {
+router.post('/add-public-ip-range', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.l3PublicNetworkIpRange = ctx.request.body.inventory;
@@ -363,198 +358,17 @@ router.post('/addPublicIpRange', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addDnsToPublicL3Network'
+      'X-Web-Hook': 'http://172.31.253.203:8000/add-dns-to-public-l3-network'
     }
   })
 })
 
-router.post('/addDnsToPublicL3Network', async(ctx, next) => {
+router.post('/add-dns-to-public-l3-network', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.publicL3NetworkDns = ctx.request.body.inventory;
   ctx.response.status = 200;
   console.log('addDnsToPublicL3Network');
-  request({
-    method: "POST",
-    url: ipAddress + "/v1/l2-networks/vlan",
-    json: {
-      "params": {
-        "vlan": 10.0,
-        "name": "Test-Net",
-        "description": "Test",
-        "zoneUuid": allInventory.zone.uuid,
-        "physicalInterface": "eth0"
-      },
-      "systemTags": [],
-      "userTags": []
-    },
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createL2VlanNetwork'
-    }
-  })
-})
-
-router.post('/createL2VlanNetwork', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.l2VlanNetwork = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('createL2VlanNetwork');
-  request({
-    method: "POST",
-    url: ipAddress + "/v1/l2-networks/" + allInventory.l2VlanNetwork.uuid + "/clusters/" + allInventory.cluster.uuid,
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/attachL2NetworkToCluster'
-    }
-  })
-})
-
-router.post('/attachL2NetworkToCluster', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.attachL2NetworkToCluster = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('attachL2NetworkToCluster');
-  request({
-    method: "POST",
-    url: ipAddress + "/v1/l3-networks",
-    json: {
-      "params": {
-        "name": "Test-L3PrivateNetwork",
-        "type": "L3BasicNetwork",
-        "l2NetworkUuid": allInventory.l2VlanNetwork.uuid,
-        "system": false
-      },
-      "systemTags": [],
-      "userTags": []
-    },
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createL3PrivateNetwork'
-    }
-  })
-})
-
-router.post('/createL3PrivateNetwork', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.l3PrivateNetwork = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('createL3PrivateNetwork');
-  request({
-    method: "POST",
-    url: ipAddress + "/v1/l3-networks/" + allInventory.l3PrivateNetwork.uuid + "/ip-ranges/by-cidr",
-    json: {
-      "params": {
-        "name": "Test-IP-Range",
-        "networkCidr": "192.168.10.0/24"
-      },
-      "systemTags": [],
-      "userTags": []
-    },
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addPrivateIpRange'
-    }
-  })
-})
-
-router.post('/addPrivateIpRange', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.l3PrivateNetworkIpRange = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('addPrivateIpRange');
-  request({
-    method: "POST",
-    url: ipAddress + "/v1/l3-networks/" + allInventory.l3PrivateNetwork.uuid + "/dns",
-    json: {
-      "params": {
-        "dns": "8.8.8.8"
-      },
-      "systemTags": [],
-      "userTags": []
-    },
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/addDnsToL3PrivateNetwork'
-    }
-  })
-})
-
-router.post('/addDnsToL3PrivateNetwork', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.l3PrivateNetworkDns = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('addDnsToL3PrivateNetwork');
-  request({
-    method: "POST",
-    url: ipAddress + "/v1/l3-networks/" + allInventory.l3PrivateNetwork.uuid + "/dns",
-    json: {
-      "params": {
-        "dns": "8.8.8.8"
-      },
-      "systemTags": [],
-      "userTags": []
-    },
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/queryNetworkServiveProvider'
-    }
-  })
-})
-
-router.post('/queryNetworkServiveProvider', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.networkServiceProvider = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('queryNetworkServiveProvider');
-  request({
-    method: "GET",
-    url: ipAddress + "/v1/network-services/providers",
-    headers: {
-      'Authorization': 'OAuth ' + sessionUuid
-    }
-  }, (err, response, body) => {
-    if (err)
-      console.log(err)
-    allInventory.networkServiceProvider = JSON.parse(body).inventories;
-    console.log('addDnsToL3PrivateNetwork');
-    let networkServiceProviderUuid = allInventory.networkServiceProvider.find((value, index, arr) => {
-      return value.name == "Flat Network Service Provider";
-    })
-    request({
-      method: "POST",
-      url: ipAddress + "/v1/l3-networks/" + allInventory.l3PrivateNetwork.uuid + "/network-services",
-      json: {
-        "params": {
-          "networkServices": {
-            [networkServiceProviderUuid.uuid]: [
-              "Eip", "DHCP"
-            ]
-          }
-        },
-        "systemTags": [],
-        "userTags": []
-      },
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid,
-        'X-Web-Hook': 'http://172.20.250.151:8000/attachNetworkServiceToL3Network'
-      }
-    })
-  })
-})
-
-router.post('/attachNetworkServiceToL3Network', async(ctx, next) => {
-  if (ctx.request.header["x-job-success"] != "true")
-    return;
-  allInventory.attachNetworkServiceToL3Network = ctx.request.body.inventory;
-  ctx.response.status = 200;
-  console.log('attachNetworkServiceToL3Network');
   request({
     method: "POST",
     url: ipAddress + "/v1/instance-offerings",
@@ -571,12 +385,13 @@ router.post('/attachNetworkServiceToL3Network', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createInstanceOffering'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-instance-offering'
     }
   })
 })
 
-router.post('/createInstanceOffering', async(ctx, next) => {
+
+router.post('/create-instance-offering', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.instanceOffering = ctx.request.body.inventory;
@@ -591,7 +406,7 @@ router.post('/createInstanceOffering', async(ctx, next) => {
         "instanceOfferingUuid": allInventory.instanceOffering.uuid,
         "imageUuid": allInventory.image.uuid,
         "l3NetworkUuids": [
-          allInventory.l3PrivateNetwork.uuid
+          allInventory.l3PublicNetwork.uuid
         ],
         "clusterUuid": allInventory.cluster.uuid,
         "description": "this is a vm"
@@ -601,12 +416,12 @@ router.post('/createInstanceOffering', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createVmInstance'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-vm-instance'
     }
   })
 })
 
-router.post('/createVmInstance', async(ctx, next) => {
+router.post('/create-vm-instance', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.vMInstance = ctx.request.body.inventory;
@@ -626,12 +441,12 @@ router.post('/createVmInstance', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createVip'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-vip'
     }
   })
 })
 
-router.post('/createVip', async(ctx, next) => {
+router.post('/create-vip', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.vip = ctx.request.body.inventory;
@@ -651,12 +466,12 @@ router.post('/createVip', async(ctx, next) => {
     },
     headers: {
       'Authorization': 'OAuth ' + sessionUuid,
-      'X-Web-Hook': 'http://172.20.250.151:8000/createEip'
+      'X-Web-Hook': 'http://172.31.253.203:8000/create-eip'
     }
   })
 })
 
-router.post('/createEip', async(ctx, next) => {
+router.post('/create-eip', async(ctx, next) => {
   if (ctx.request.header["x-job-success"] != "true")
     return;
   allInventory.eip = ctx.request.body.inventory;

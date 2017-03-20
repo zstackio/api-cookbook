@@ -1,9 +1,8 @@
 const request = require('request');
 const requestPromise = require('request-promise');
 
-const url = 'http://172.20.12.129:8080/zstack/v1/accounts/login';
+
 const ipAddress = 'http://172.20.12.129:8080/zstack';
-const ipAddressT = "172.20.12.129";
 const loginView = {
   "logInByAccount": {
     "password": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86",
@@ -15,7 +14,7 @@ const accountName = "admin";
 
 var sessionUuid = "mession";
 var zoneInventory, clusterInventory;;
-const server = '172.20.12.129:8080';
+
 var allInventor = {
   zone: "",
   cluster: "",
@@ -33,20 +32,15 @@ var allInventor = {
   vMInstance: "",
   instanceOffering: "",
   attachNetworkServiceToL3Network: "",
-  l3PrivateNetworkDns: "",
-  l3PrivateNetworkIpRange: "",
-  l3PrivateNetwork: "",
   attachL2NetworkToCluster: "",
-  l2VlanNetwork: "",
   publicL3NetworkDns: "",
   attachL2NoVlanNetworkToCluster: "",
   networkServiceProvider: ""
 };
 
 var polling = (responsed, sessionUuid, inventory, callback = "") => {
-  console.log("statusCode:" + responsed.statusCode);
   if (responsed.statusCode == 202) {
-    var url = responsed.body.location.replace(/[0-9]+(?:\.[0-9]+){3}:[0-9]+/, server);
+    var url = responsed.body.location.replace(/[0-9]+(?:\.[0-9]+){3}:[0-9]+/, '172.20.12.129:8080');
     let interval = setInterval(() => {
       requestPromise({
           method: 'GET',
@@ -95,7 +89,6 @@ var login = (ipAddress, password, accountName) => {
 
 login(ipAddress, password, accountName)
   .then((parsedBody) => {
-    console.log(parsedBody.inventory.uuid);
     sessionUuid = parsedBody.inventory.uuid;
     createZone(ipAddress, sessionUuid);
   })
@@ -124,8 +117,6 @@ var createZone = (ipAddress, sessionUuid) => {
 };
 
 var createCluster = (ipAddress, sessionUuid) => {
-  console.log("come in");
-  console.log("allInventor.zone:" + JSON.stringify(allInventor.zone));
   requestPromise({
       method: 'POST',
       url: ipAddress + '/v1/clusters',
@@ -158,7 +149,7 @@ var addKvmHost = (ipAddress, sessionUuid) => {
         "params": {
           "name": "HostTest",
           "clusterUuid": allInventor.cluster.uuid,
-          "managementIp": ipAddressT,
+          "managementIp": "10.0.198.19",
           "username": "root",
           "password": "password",
           "sshPort": 22.0
@@ -183,7 +174,7 @@ var addNfsPrimaryStorage = (ipAddress, sessionUuid) => {
       url: ipAddress + '/v1/primary-storage/nfs',
       body: {
         "params": {
-          "url": ipAddressT + ":/nfs_root",
+          "url": "172.20.12.129" + ":/nfs_root",
           "zoneUuid": allInventor.zone.uuid,
           "name": "PS1",
           "type": "NFS"
@@ -226,7 +217,7 @@ var addSftpBackupStorage = (ipAddress, sessionUuid) => {
       url: ipAddress + "/v1/backup-storage/sftp",
       body: {
         "params": {
-          "hostname": "10.0.38.145",
+          "hostname": "10.0.198.19",
           "username": "root",
           "password": "password",
           "sshPort": 22.0,
@@ -401,162 +392,7 @@ var addDnsToPublicL3Network = (ipAddress, sessionUuid) => {
       json: true
     })
     .then((response) => {
-      polling(response, sessionUuid, "publicL3NetworkDns", createL2VlanNetwork);
-    })
-}
-
-var createL2VlanNetwork = (ipAddress, sessionUuid) => {
-  requestPromise({
-      method: "POST",
-      url: ipAddress + "/v1/l2-networks/vlan",
-      body: {
-        "params": {
-          "vlan": 10.0,
-          "name": "Test-Net",
-          "description": "Test",
-          "zoneUuid": allInventor.zone.uuid,
-          "physicalInterface": "eth0"
-        },
-        "systemTags": [],
-        "userTags": []
-      },
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "l2VlanNetwork", attachL2VlanNetworkToCluster);
-    })
-}
-
-var attachL2VlanNetworkToCluster = (ipAddress, sessionUuid) => {
-  requestPromise({
-      method: "POST",
-      url: ipAddress + "/v1/l2-networks/" + allInventor.l2VlanNetwork.uuid + "/clusters/" + allInventor.cluster.uuid,
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "attachL2NetworkToCluster", createL3PrivateNetwork);
-    })
-}
-
-var createL3PrivateNetwork = (ipAddress, sessionUuid) => {
-  requestPromise({
-      method: "POST",
-      url: ipAddress + "/v1/l3-networks",
-      body: {
-        "params": {
-          "name": "Test-L3PrivateNetwork",
-          "type": "L3BasicNetwork",
-          "l2NetworkUuid": allInventor.l2VlanNetwork.uuid,
-          "system": false
-        },
-        "systemTags": [],
-        "userTags": []
-      },
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "l3PrivateNetwork", addPrivateIpRange);
-    });
-}
-
-var addPrivateIpRange = (ipAddress, sessionUuid) => {
-  requestPromise({
-      method: "POST",
-      url: ipAddress + "/v1/l3-networks/" + allInventor.l3PrivateNetwork.uuid + "/ip-ranges/by-cidr",
-      body: {
-        "params": {
-          "name": "Test-IP-Range",
-          "networkCidr": "192.168.10.0/24"
-        },
-        "systemTags": [],
-        "userTags": []
-      },
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "l3PrivateNetworkIpRange", addDnsToL3PrivateNetwork);
-    })
-}
-
-var addDnsToL3PrivateNetwork = (ipAddress, sessionUuid) => {
-  requestPromise({
-      method: "POST",
-      url: ipAddress + "/v1/l3-networks/" + allInventor.l3PrivateNetwork.uuid + "/dns",
-      body: {
-        "params": {
-          "dns": "8.8.8.8"
-        },
-        "systemTags": [],
-        "userTags": []
-      },
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "l3PrivateNetworkDns", queryNetworkServiveProvider);
-    });
-}
-
-var queryNetworkServiveProvider = (ipAddress, sessionUuid) => {
-  requestPromise({
-      method: "GET",
-      url: ipAddress + "/v1/network-services/providers",
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "networkServiceProvider", attachNetworkServiceToL3Network);
-    })
-}
-
-var attachNetworkServiceToL3Network = (ipAddress, sessionUuid) => {
-  let networkServiceProviderUuid = allInventor.networkServiceProvider.find((value, index, arr) => {
-    return value.name =="Flat Network Service Provider";
-  })
-  requestPromise({
-      method: "POST",
-      url: ipAddress + "/v1/l3-networks/" + allInventor.l3PrivateNetwork.uuid + "/network-services",
-      body: {
-        "params": {
-          "networkServices": {
-            [networkServiceProviderUuid.uuid]: [
-              "Eip", "DHCP"
-            ]
-          }
-        },
-        "systemTags": [],
-        "userTags": []
-      },
-      headers: {
-        'Authorization': 'OAuth ' + sessionUuid
-      },
-      resolveWithFullResponse: true,
-      json: true
-    })
-    .then((response) => {
-      polling(response, sessionUuid, "attachNetworkServiceToL3Network", createInstanceOffering);
+      polling(response, sessionUuid, "publicL3NetworkDns", createInstanceOffering);
     })
 }
 
@@ -596,7 +432,7 @@ var createVmInstance = (ipAddress, sessionUuid) => {
           "instanceOfferingUuid": allInventor.instanceOffering.uuid,
           "imageUuid": allInventor.image.uuid,
           "l3NetworkUuids": [
-            allInventor.l3PrivateNetwork.uuid
+            allInventor.l3PublicNetwork.uuid
           ],
           "clusterUuid": allInventor.cluster.uuid,
           "description": "this is a vm"

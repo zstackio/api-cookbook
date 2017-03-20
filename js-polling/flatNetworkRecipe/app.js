@@ -3,9 +3,7 @@ const requestPromise = require('request-promise');
 
 
 
-const url = 'http://172.20.12.213:8080/zstack/v1/accounts/login';
 const ipAddress = 'http://172.20.12.213:8080/zstack';
-const ipAddressT = "172.20.12.213";
 const loginView = {
   "logInByAccount": {
     "password": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86",
@@ -17,7 +15,7 @@ const accountName = "admin";
 
 var sessionUuid = "mession";
 var zoneInventory, clusterInventory;;
-const server = '172.20.12.213:8080';
+
 var allInventor = {
   zone: "",
   cluster: "",
@@ -47,7 +45,7 @@ var allInventor = {
 
 var polling = (responsed, sessionUuid, inventory, callback = "") => {
   if (responsed.statusCode == 202) {
-    var url = responsed.body.location.replace(/[0-9]+(?:\.[0-9]+){3}:[0-9]+/, server);
+    var url = responsed.body.location.replace(/[0-9]+(?:\.[0-9]+){3}:[0-9]+/, '172.20.12.213:8080');
     let interval = setInterval(() => {
       requestPromise({
           method: 'GET',
@@ -155,7 +153,7 @@ var addKvmHost = (ipAddress, sessionUuid) => {
         "params": {
           "name": "HostTest",
           "clusterUuid": allInventor.cluster.uuid,
-          "managementIp": ipAddressT,
+          "managementIp": "10.0.58.28",
           "username": "root",
           "password": "password",
           "sshPort": 22.0
@@ -219,7 +217,7 @@ var addSftpBackupStorage = (ipAddress, sessionUuid) => {
       url: ipAddress + "/v1/backup-storage/sftp",
       body: {
         "params": {
-          "hostname": "10.0.38.145",
+          "hostname": "10.0.58.28",
           "username": "root",
           "password": "password",
           "sshPort": 22.0,
