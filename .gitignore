@@ -1,3 +1,4 @@
 workspace.xml
-README
 *~
+java/target/
+java/.idea/

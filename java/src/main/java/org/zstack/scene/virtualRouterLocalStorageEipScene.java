@@ -138,7 +138,7 @@ public class virtualRouterLocalStorageEipScene {
         //添加镜像到本地镜像仓库
         AddImageAction addImageAction = new AddImageAction();
         addImageAction.name = "image1";
-        addImageAction.url = "http://cdn.zstack.io/product_downloads/iso/ZStack-Enterprise-x86_64-DVD-1.9.0.iso";
+        addImageAction.url = "http://cdn.zstack.io/product_downloads/images/zstack-image.qcow2";
         addImageAction.format = "qcow2";
         addImageAction.backupStorageUuids = Collections.singletonList(imageStoreBackupStoage.uuid);
         addImageAction.sessionId = sessionId;

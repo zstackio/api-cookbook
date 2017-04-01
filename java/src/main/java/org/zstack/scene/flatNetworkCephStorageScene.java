@@ -57,7 +57,7 @@ public class flatNetworkCephStorageScene {
 
         //设置登录zstack的地址；通过172.20.11.115连接到部署zstack管理节点环境的主机
         ZSConfig.Builder zBuilder = new ZSConfig.Builder();
-        zBuilder.setHostname("172.20.11.115");
+        zBuilder.setHostname("10.0.204.52");
         ZSClient.configure(zBuilder.build());
 
         //登录zstack；获取session
@@ -94,14 +94,14 @@ public class flatNetworkCephStorageScene {
         addKVMHostAction.username = "root";
         addKVMHostAction.password = "password";
         addKVMHostAction.clusterUuid = cluster.uuid;
-        addKVMHostAction.managementIp = "192.168.99.93";
+        addKVMHostAction.managementIp = "10.0.204.52";
         addKVMHostAction.sessionId = sessionId;
         HostInventory host = addKVMHostAction.call().value.inventory;
         System.out.println("addKVMHost successfully");
 
         //添加Ceph主存储;根据需要添加多个ceph节点;zstack通过管理网络连接到ceph集群，这里与NFS集群不同
         AddCephPrimaryStorageAction addCephPrimaryStorageAction = new AddCephPrimaryStorageAction();
-        addCephPrimaryStorageAction.monUrls = Collections.singletonList("root:password@192.168.99.93");
+        addCephPrimaryStorageAction.monUrls = Collections.singletonList("root:password@10.0.204.52");
         addCephPrimaryStorageAction.name = "cephPs1";
         addCephPrimaryStorageAction.zoneUuid = zone.uuid;
         addCephPrimaryStorageAction.sessionId = sessionId;
@@ -118,7 +118,7 @@ public class flatNetworkCephStorageScene {
 
         //添加Ceph镜像存储;根据需要添加多个ceph节点
         AddCephBackupStorageAction addCephBackupStorageAction = new AddCephBackupStorageAction();
-        addCephBackupStorageAction.monUrls = Collections.singletonList("root:password@192.168.99.93");
+        addCephBackupStorageAction.monUrls = Collections.singletonList("root:password@10.0.204.52");
         addCephBackupStorageAction.name = "cephBs1";
         addCephBackupStorageAction.sessionId = sessionId;
         BackupStorageInventory cephBackupStoage = addCephBackupStorageAction.call().value.inventory;
@@ -135,7 +135,7 @@ public class flatNetworkCephStorageScene {
         //添加虚拟机镜像到Ceph镜像仓库
         AddImageAction addVmImageAction = new AddImageAction();
         addVmImageAction.name = "image1";
-        addVmImageAction.url = "http://cdn.zstack.io/product_downloads/iso/ZStack-Enterprise-x86_64-DVD-1.9.0.iso";
+        addVmImageAction.url = "http://cdn.zstack.io/product_downloads/images/zstack-image.qcow2";
         addVmImageAction.format = "qcow2";
         addVmImageAction.backupStorageUuids = Collections.singletonList(cephBackupStoage.uuid);
         addVmImageAction.sessionId = sessionId;
